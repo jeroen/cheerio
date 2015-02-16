@@ -49,7 +49,8 @@ cheerio_node <- function(ct, varname){
         ct$call(fun, name)
       } else {
         statement <- paste0(fun, "('", name, "','", value, "')")
-        force(cheerio_node(ct, ct$call("create_object", I(statement))))
+        newvar <- ct$call("create_object", I(statement));
+        cheerio_node(ct, newvar)
       }
     }
     environment();
