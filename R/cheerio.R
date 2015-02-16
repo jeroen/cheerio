@@ -36,7 +36,7 @@ cheerio_doc <- function(ct){
 }
 
 cheerio_node <- function(ct, varname){
-  this <- local({
+  el <- local({
     text <- function(){
       ct$call(paste_dot(varname, "text"))
     }
@@ -49,10 +49,31 @@ cheerio_node <- function(ct, varname){
         ct$call(fun, name)
       } else {
         statement <- paste0(fun, "('", name, "','", value, "')")
-        newvar <- ct$call("create_object", I(statement));
-        cheerio_node(ct, newvar)
+        ct$eval(statement)
+        return(el)
       }
     }
+    data <- function(name, value){
+      fun <- paste_dot(varname, "data")
+      if(missing(value)){
+        ct$call(fun, name)
+      } else {
+        statement <- paste0(fun, "('", name, "','", value, "')")
+        ct$eval(statement)
+        return(el)
+      }
+    }
+    val <- function(name){
+      fun <- paste_dot(varname, "val")
+      if(missing(name)){
+        ct$call(fun)
+      } else {
+        statement <- paste0(fun, "('", name, , "')")
+        ct$eval(statement)
+        return(el)
+      }
+    }
+
     environment();
   })
 }
