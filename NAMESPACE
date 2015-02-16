@@ -3,3 +3,4 @@
 export(cheerio)
 importFrom(V8,new_context)
 importFrom(curl,curl)
+importFrom(jsonlite,toJSON)

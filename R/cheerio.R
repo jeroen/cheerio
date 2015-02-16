@@ -5,6 +5,7 @@
 #' @export
 #' @importFrom V8 new_context
 #' @importFrom curl curl
+#' @importFrom jsonlite toJSON
 #' @param html Character vector html/xml
 cheerio <- function(html, ...){
   # Shorthand for files and URLs
@@ -36,43 +37,125 @@ cheerio_doc <- function(ct){
 }
 
 cheerio_node <- function(ct, varname){
+  call_and_return <- function(fun, ...){
+    FUN <- paste_dot(varname, fun)
+    ct$call(FUN, ...)
+  }
+  call_and_save <- function(fun, ...){
+    FUN <- paste_dot(varname, fun)
+    args <- paste(vapply(list(...), toJSON, character(1), auto_unbox = TRUE), collapse=",")
+    statement <- paste0(FUN, "(", args, ")")
+    newvar <- ct$call("create_object", I(statement));
+    cheerio_node(ct, newvar)
+  }
   el <- local({
+    length <- function(){
+      ct$get(paste_dot(varname, "length"))
+    }
     text <- function(){
-      ct$call(paste_dot(varname, "text"))
+      call_and_return("text")
     }
     html <- function(){
-      ct$call(paste_dot(varname, "html"))
+      call_and_return("html")
     }
     attr <- function(name, value){
-      fun <- paste_dot(varname, "attr")
       if(missing(value)){
-        ct$call(fun, name)
+        call_and_return("attr", name)
       } else {
-        statement <- paste0(fun, "('", name, "','", value, "')")
-        ct$eval(statement)
-        return(el)
+        call_and_save("attr", name, value)
       }
     }
     data <- function(name, value){
-      fun <- paste_dot(varname, "data")
       if(missing(value)){
-        ct$call(fun, name)
+        call_and_return("data", name)
       } else {
-        statement <- paste0(fun, "('", name, "','", value, "')")
-        ct$eval(statement)
-        return(el)
+        call_and_save("data", name, value)
       }
     }
-    val <- function(name){
-      fun <- paste_dot(varname, "val")
-      if(missing(name)){
-        ct$call(fun)
+    val <- function(value){
+      if(missing(value)){
+        call_and_return("val")
       } else {
-        statement <- paste0(fun, "('", name, , "')")
-        ct$eval(statement)
-        return(el)
+        call_and_save("val", value)
       }
     }
+    removeAttr <- function(name){
+      call_and_save("removeAttr", name)
+    }
+    hasClass <- function(className){
+      call_and_return("hasClass", className)
+    }
+    addClass <- function(className){
+      call_and_save("addClass", className)
+    }
+    removeClass <- function(className){
+      if(missing(className)){
+        call_and_save("removeClass")
+      } else {
+        call_and_save("removeClass", className)
+      }
+    }
+    toggleClass <- function(className){
+      call_and_save("toggleClass", className)
+    }
+    is <- function(selector){
+      call_and_return("is", selector)
+    }
+    find <- function(selector){
+      call_and_save("is", selector)
+    }
+    parent <- function(selector){
+      if(missing(selector)){
+        call_and_save("parent")
+      } else {
+        call_and_save("parent", selector)
+      }
+    }
+    parents <- function(selector){
+      if(missing(selector)){
+        call_and_save("parents")
+      } else {
+        call_and_save("parents", selector)
+      }
+    }
+    parentsUntil <- function(selector, filter){
+      if(missing(selector)){
+        call_and_save("parents")
+      } else if(missing(filter)) {
+        call_and_save("parents", selector)
+      } else {
+        call_and_save("parents", selector, filter)
+      }
+    }
+    closest <- function(selector){
+      call_and_save("closest", selector)
+    }
+    next <- function(selector){
+      if(missing(selector)){
+        call_and_save("next")
+      } else {
+        call_and_save("next", selector)
+      }
+    }
+    nextAll <- function(){
+      call_and_save("nextAll")
+    }
+    nextUntil <- function(selector){
+      call_and_save("nextUntil", selector)
+    }
+    prev <- function(selector){
+      if(missing(selector)){
+        call_and_save("prev")
+      } else {
+        call_and_save("prev", selector)
+      }
+    }
+    prevUntil <- function(selector){
+      call_and_save("prevUntil", selector)
+    }
+
+
+
 
     environment();
   })
@@ -81,3 +164,5 @@ cheerio_node <- function(ct, varname){
 paste_dot <- function(...){
   paste(..., sep = ".")
 }
+
+
